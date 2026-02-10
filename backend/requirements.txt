@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pymongo
+python-dotenv
+requests
+bcrypt
+pyjwt
+python-multipart
+joblib

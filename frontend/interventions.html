@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Interventions</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <script src="lang.js"></script>
+    <script>
+        function checkAuth() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.location.href = 'login.html';
+            } else {
+                initLanguage();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('username');
+            window.location.href = 'login.html';
+        }
+    </script>
+</head>
+
+<body onload="checkAuth(); loadInterventions();">
+
+    <div class="navbar">
+        <a href="index.html" id="navDashboard">Dashboard</a>
+        <a href="action.html" id="navAdd">Add Intervention</a>
+        <a href="interventions.html" id="navView">View Interventions</a>
+        <a href="#" onclick="logout()" id="navLogout">Logout</a>
+
+        <span class="lang">
+            <label style="color: white;">
+                <input type="radio" name="lang" value="en" onchange="changeLang('en')"> English
+            </label>
+            <label style="color: white;">
+                <input type="radio" name="lang" value="ta" onchange="changeLang('ta')"> தமிழ்
+            </label>
+        </span>
+    </div>
+
+    <div class="container">
+        <h2 id="viewTitle">Intervention History</h2>
+
+        <div class="card">
+            <table border="1" width="100%">
+                <thead>
+                    <tr>
+                        <th id="thName">Name</th>
+                        <th id="thDistrict">District</th>
+                        <th id="thRisk">Risk Level</th>
+                        <th id="thAction">Action Taken</th>
+                        <th id="thRemarks">Remarks</th>
+                        <th id="thStatus">Status</th>
+                        <th id="thDate">Date</th>
+                    </tr>
+                </thead>
+                <tbody id="body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = localStorage.getItem("lang") || "en";
+
+        // Map English remark values → Tamil (same as dropdown)
+        const remarkTranslationMap = {
+            "Parent contacted": "பெற்றோர் தொடர்பு கொள்ளப்பட்டது",
+            "Student counselled": "மாணவர் ஆலோசனை செய்யப்பட்டார்",
+            "Medical attention required": "மருத்துவ கவனம் தேவை",
+            "Under observation": "கண்காணிப்பில் உள்ளார்",
+            "Issue resolved": "பிரச்சினை தீர்க்கப்பட்டது",
+            "Referred to authority": "அதிகாரத்திற்கு பரிந்துரைக்கப்பட்டது",
+            "Follow up needed": "பின்தொடர்வு தேவை"
+            // Add any other remarks that appear in your database here
+        };
+
+        function getDisplayText(value, category) {
+            if (!value) return "—";
+
+            // Student name: always original
+            if (category === "name") {
+                return value;
+            }
+
+            // English mode: show original
+            if (currentLang === "en") {
+                return value;
+            }
+
+            // Tamil mode: show English / Tamil
+            let tamil = value;
+
+            if (category === "district") {
+                const key = `dist${value.replace(/\s+/g, '')}`;
+                tamil = translations.ta[key] || value;
+            } else if (category === "risk") {
+                const key = `risk${value}`;
+                tamil = translations.ta[key] || value;
+            } else if (category === "action") {
+                const key = `action${value.replace(/\s+/g, '')}`;
+                tamil = translations.ta[key] || value;
+            } else if (category === "status") {
+                const key = `status${value.replace(/\s+/g, '')}`;
+                tamil = translations.ta[key] || value;
+            } else if (category === "remarks") {
+                // Use the map for remarks (same as dropdown options)
+                tamil = remarkTranslationMap[value] || value;
+            }
+
+            return `${value} / ${tamil}`;
+        }
+
+        function loadInterventions() {
+            fetch("http://localhost:8005/interventions", {
+                headers: {
+                    "Authorization": "Bearer " + localStorage.getItem('auth_token')
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById("body");
+                    tbody.innerHTML = "";
+
+                    if (!data.interventions || data.interventions.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No interventions found</td></tr>';
+                        return;
+                    }
+
+                    data.interventions.forEach(item => {
+                        const row = `
+                    <tr>
+                        <td>${getDisplayText(item.student_name || "", "name")}</td>
+                        <td>${getDisplayText(item.district || "", "district")}</td>
+                        <td>${getDisplayText(item.risk || "", "risk")}</td>
+                        <td>${getDisplayText(item.action_taken || "", "action")}</td>
+                        <td>${getDisplayText(item.remarks || "", "remarks")}</td>
+                        <td>${getDisplayText(item.status || "", "status")}</td>
+                        <td>${item.date || "—"}</td>
+                    </tr>
+                `;
+                        tbody.innerHTML += row;
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById("body").innerHTML =
+                        '<tr><td colspan="7" style="text-align:center;color:red;">Error loading data</td></tr>';
+                });
+        }
+
+        // Refresh table on language change
+        const originalChangeLang = changeLang;
+        changeLang = function (lang) {
+            originalChangeLang(lang);
+            currentLang = lang;
+            loadInterventions();
+        };
+
+        const originalInit = initLanguage;
+        initLanguage = function () {
+            originalInit();
+            currentLang = localStorage.getItem("lang") || "en";
+            loadInterventions();
+        };
+    </script>
+
+</body>
+
+</html>

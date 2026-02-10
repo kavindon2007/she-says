@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Action Console</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="lang.js"></script>
+    <script>
+        function checkAuth() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.location.href = 'login.html';
+            } else {
+                initLanguage();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('username');
+            window.location.href = 'login.html';
+        }
+    </script>
+    <style>
+        /* ✅ PROPER SPACING & CLEAN LAYOUT */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background: #f5f5f5;
+        }
+
+        .navbar {
+            background: #2c3e50;
+            padding: 1rem;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin-right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .navbar a:hover {
+            background: #34495e;
+        }
+
+        .lang label {
+            margin-left: 1rem;
+            cursor: pointer;
+        }
+
+        .lang input {
+            margin-right: 0.5rem;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        /* ✅ FIELD SPACING - PROPER GAPS */
+        .form-group {
+            margin-bottom: 1.8rem;
+            /* BIG SPACE BETWEEN FIELDS */
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.6rem;
+            font-size: 1.05em;
+        }
+
+        input,
+        select {
+            padding: 0.9rem 1.2rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #fafbfc;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            background: white;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        #submitBtn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 1.1rem 2.5rem;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        #submitBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.3);
+        }
+
+        /* Tamil font support */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600&display=swap');
+
+        body.ta * {
+            font-family: 'Noto Sans Tamil', sans-serif;
+        }
+    </style>
+</head>
+
+<body onload="checkAuth()">
+
+    <div class="navbar">
+        <a href="index.html" id="navDashboard">Dashboard</a>
+        <a href="action.html" id="navAdd">Add Intervention</a>
+        <a href="interventions.html" id="navView">View Interventions</a>
+        <a href="#" onclick="logout()" id="navLogout">Logout</a>
+
+        <span class="lang">
+            <label style="color: white;">
+                <input type="radio" name="lang" value="en" onchange="changeLang('en')">
+                English
+            </label>
+            <label style="color: white;">
+                <input type="radio" name="lang" value="ta" onchange="changeLang('ta')">
+                தமிழ்
+            </label>
+        </span>
+    </div>
+
+    <div class="container">
+        <h2 id="actionTitle">Teacher Action Console</h2>
+
+        <div class="card">
+            <div class="form-group">
+                <label id="lblName">Student Name:</label>
+                <input id="name" type="text" placeholder="Enter student name">
+            </div>
+
+            <div class="form-group">
+                <label id="lblDistrict">District:</label>
+                <select id="district">
+                    <option value="">-- Select District --</option>
+                    <option value="Chennai">Chennai</option>
+                    <option value="Coimbatore">Coimbatore</option>
+                    <option value="Madurai">Madurai</option>
+                    <option value="Trichy">Trichy</option>
+                    <option value="Salem">Salem</option>
+                    <option value="Erode">Erode</option>
+                    <option value="Tirunelveli">Tirunelveli</option>
+                    <option value="Thanjavur">Thanjavur</option>
+                    <option value="Thoothukudi">Thoothukudi</option>
+                    <option value="Vellore">Vellore</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label id="lblRisk">Risk Level:</label>
+                <select id="risk">
+                    <option value="">-- Select --</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label id="lblAction">Action Taken:</label>
+                <select id="action">
+                    <option value="">-- Select --</option>
+                    <option value="Counselling">Counselling</option>
+                    <option value="Parent Meeting">Parent Meeting</option>
+                    <option value="Warning Notice">Warning Notice</option>
+                    <option value="Medical Help">Medical Help</option>
+                    <option value="Police Report">Police Report</option>
+                    <option value="Teacher Guidance">Teacher Guidance</option>
+                    <option value="Psychologist Referral">Psychologist Referral</option>
+                    <option value="Community Support">Community Support</option>
+                    <option value="School Transfer">School Transfer</option>
+                    <option value="No Action Needed">No Action Needed</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label id="lblRemarks">Remarks:</label>
+                <select id="remarks">
+                    <option value="">-- Select Remarks --</option>
+                    <option value="Parent contacted">Parent contacted</option>
+                    <option value="Student counselled">Student counselled</option>
+                    <option value="Medical attention required">Medical attention required</option>
+                    <option value="Under observation">Under observation</option>
+                    <option value="Issue resolved">Issue resolved</option>
+                    <option value="Referred to authority">Referred to authority</option>
+                    <option value="Follow up needed">Follow up needed</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label id="lblStatus">Status:</label>
+                <select id="status">
+                    <option value="">-- Select --</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+
+            <button id="submitBtn" onclick="submit()">Submit</button>
+        </div>
+    </div>
+
+    <script>
+        function submit() {
+            const data = {
+                student_name: document.getElementById("name").value.trim(),
+                district: document.getElementById("district").value,
+                risk: document.getElementById("risk").value,
+                action_taken: document.getElementById("action").value,
+                remarks: document.getElementById("remarks").value,
+                status: document.getElementById("status").value
+            };
+
+            if (!data.student_name || !data.district) {
+                alert("Please fill Student Name and District");
+                return;
+            }
+
+            fetch("http://localhost:8005/add_intervention", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + localStorage.getItem('auth_token')
+                },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(() => {
+                    alert("Saved Successfully!");
+                    document.getElementById("name").value = "";
+                })
+                .catch(err => alert("Error: " + err.message));
+        }
+    </script>
+
+</body>
+
+</html>

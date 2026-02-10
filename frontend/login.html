@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SheStays - Login</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-container {
+            max-width: 450px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-container {
+            display: flex;
+            margin-bottom: 25px;
+            background: #f1f4f8;
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+            font-weight: 600;
+            color: #7f8c8d;
+        }
+
+        .toggle-btn.active {
+            background: white;
+            color: #3498db;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-submit:hover {
+            background: #2980b9;
+        }
+
+        .btn-submit:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        #loading {
+            text-align: center;
+            display: none;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2c3e50; margin: 0;">SheStays</h1>
+            <p style="color: #7f8c8d; margin-top: 5px;">Empowering Secondary Education</p>
+        </div>
+
+        <div class="toggle-container">
+            <div id="loginToggle" class="toggle-btn active" onclick="setMode('login')">Login</div>
+            <div id="registerToggle" class="toggle-btn" onclick="setMode('register')">Register</div>
+        </div>
+
+        <form id="authForm" onsubmit="handleAuth(event)">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter username" required minlength="3"
+                    pattern="^[a-zA-Z0-9_]+$">
+                <div class="error-msg" id="usernameError">3-30 characters, alphanumeric + underscore only</div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-container">
+                    <input type="password" id="password" placeholder="Enter password" required minlength="8">
+                    <span class="toggle-password" onclick="togglePassword()">👁️</span>
+                </div>
+                <div class="error-msg" id="passwordError">Min 8 chars, 1 uppercase, 1 lowercase, 1 number</div>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" placeholder="10-digit mobile number" required pattern="^[6-9]\d{9}$">
+                <div class="error-msg" id="phoneError">Invalid Indian mobile format (10 digits starting 6-9)</div>
+            </div>
+
+            <div class="form-group" id="profileGroup" style="display: none;">
+                <label for="profile_type">Profile Type</label>
+                <select id="profile_type">
+                    <option value="Teacher">Teacher</option>
+                    <option value="Principal">Principal</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Social Worker">Social Worker</option>
+                </select>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-submit">Login</button>
+            <div id="loading">Connecting...</div>
+            <div id="statusMsg" style="text-align: center; margin-top: 15px; font-weight: 600;"></div>
+        </form>
+    </div>
+
+    <script>
+        let mode = 'login';
+        const API_BASE = "http://localhost:8005/api/auth";
+
+        function setMode(newMode) {
+            mode = newMode;
+            document.getElementById('loginToggle').classList.toggle('active', mode === 'login');
+            document.getElementById('registerToggle').classList.toggle('active', mode === 'register');
+            document.getElementById('profileGroup').style.display = mode === 'register' ? 'block' : 'none';
+            document.getElementById('submitBtn').innerText = mode === 'register' ? 'Register' : 'Login';
+            document.getElementById('statusMsg').innerText = '';
+
+            // Disable profile_type if not in register mode to avoid sending it
+            document.getElementById('profile_type').disabled = mode === 'login';
+        }
+
+        function togglePassword() {
+            const pass = document.getElementById('password');
+            pass.type = pass.type === 'password' ? 'text' : 'password';
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const statusMsg = document.getElementById('statusMsg');
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+
+            const data = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                phone: document.getElementById('phone').value
+            };
+
+            if (mode === 'register') {
+                data.profile_type = document.getElementById('profile_type').value;
+
+                // Validate password strength on client-side
+                const hasUpper = /[A-Z]/.test(data.password);
+                const hasLower = /[a-z]/.test(data.password);
+                const hasNum = /[0-9]/.test(data.password);
+                if (!hasUpper || !hasLower || !hasNum) {
+                    alert("Password must contain uppercase, lowercase, and a number.");
+                    return;
+                }
+            }
+
+            statusMsg.innerText = '';
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                const endpoint = `${API_BASE}/${mode}`;
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('auth_token', result.access_token);
+                    localStorage.setItem('username', data.username);
+                    statusMsg.style.color = '#27ae60';
+                    statusMsg.innerText = mode === 'register' ? "Registration Successful! Redirecting..." : "Login Successful!";
+                    setTimeout(() => window.location.href = 'index.html', 1000);
+                } else {
+                    statusMsg.style.color = '#e74c3c';
+                    statusMsg.innerText = result.detail || "Authentication Failed";
+                }
+            } catch (error) {
+                statusMsg.style.color = '#e74c3c';
+                statusMsg.innerText = "Connection Error to Backend";
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        // Check if already logged in
+        if (localStorage.getItem('auth_token')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+
+</body>
+
+</html>

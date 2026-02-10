@@ -1,0 +1,21 @@
+# Environment variables (contains sensitive data)
+.env
+backend/.env
+
+# Virtual environment
+venv/
+backend/venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
