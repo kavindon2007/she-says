@@ -4,6 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <title>SheStays AI Risk Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="lang.js"></script>
 </head>
@@ -48,11 +53,11 @@
         <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
             <div class="stat-card">
                 <h3 id="totalLabel" data-lang="total">Total Students at Risk</h3>
-                <p id="totalCount" style="font-size: 24px; font-weight: bold; color: #3498db;">0</p>
+                <p id="totalCount" style="font-size: 32px; font-weight: 700; color: var(--primary);">0</p>
             </div>
             <div class="stat-card">
                 <h3 id="riskLabel" data-lang="risk">High Risk Alerts</h3>
-                <p id="highRiskCount" style="font-size: 24px; font-weight: bold; color: #e74c3c;">0</p>
+                <p id="highRiskCount" style="font-size: 32px; font-weight: 700; color: var(--accent);">0</p>
             </div>
         </div>
     </div>
@@ -72,8 +77,14 @@
 
     <!-- Full-Screen Expansion Overlay -->
     <div id="expansionOverlay" class="overlay">
-        <!-- Close Button (X) - Top Right -->
-        <button class="btn-close-fs" onclick="closeExpansion()">×</button>
+        <button class="btn-close-fs" onclick="closeExpansion()">✕</button>
+
+        <div style="text-align:center; margin-top:60px; margin-bottom: 20px;">
+            <h1 id="expansionOverlayTitle" style="margin:0; font-size:32px; color:var(--text-main); font-weight: 700;">
+                Institution Details</h1>
+            <div id="expansionOverlaySubtitle" style="color:var(--text-muted); margin-top:8px; font-size: 16px;">Core
+                Information & Classrooms</div>
+        </div>
 
         <!-- Tab Bar -->
         <div class="tab-bar">
@@ -99,17 +110,12 @@
     <!-- Classroom Expansion Overlay -->
     <div id="classroomOverlay" class="overlay">
         <button class="btn-close-fs" onclick="closeClassroomExpansion()">✕</button>
-        <div class="user-info" style="position:absolute; top:20px; left:40px;">
-            <div class="user-avatar" style="width:40px; height:40px; font-size:18px;">C</div>
-            <div>
-                <div style="font-weight:bold;">Classroom Details</div>
-                <div style="font-size:12px; opacity:0.8;">Manager</div>
-            </div>
-        </div>
 
-        <div style="text-align:center; margin-top:20px;">
-            <h1 id="classroomOverlayTitle" style="margin:0; font-size:24px; color:#333;">Classroom Name</h1>
-            <div id="classroomOverlaySubtitle" style="color:#666; margin-top:5px;">Class Details</div>
+        <div style="text-align:center; margin-top:60px; margin-bottom: 20px;">
+            <h1 id="classroomOverlayTitle" style="margin:0; font-size:32px; color:var(--text-main); font-weight: 700;">
+                Classroom Name</h1>
+            <div id="classroomOverlaySubtitle" style="color:var(--text-muted); margin-top:8px; font-size: 16px;">Class
+                Details</div>
         </div>
 
         <div class="tab-bar">
@@ -121,9 +127,28 @@
             <!-- Class Info Content Loaded Here -->
         </div>
         <div id="content_studentData" class="tab-content">
-            <div style="text-align:center; padding:50px; color:#666;">
-                <h3>Student Data</h3>
-                <p>List of students will appear here.</p>
+            <div class="student-data-container">
+                <div class="privacy-notice">
+                    🔒 Student data is hidden by default for privacy. Click below to load.
+                </div>
+
+                <div style="display:flex; align-items: center; justify-content: space-between; margin-bottom:32px;">
+                    <button class="btn-load-students" id="btn_load_students" onclick="loadStudentData()">
+                        Load Student Data & AI Analysis
+                    </button>
+                    <button class="btn-add-student" onclick="openAddStudentModal()" style="display:none;"
+                        id="btn_add_student">
+                        ➕ Add Student Profile
+                    </button>
+                </div>
+            </div>
+
+            <div id="student_list_container" style="display:none;">
+                <!-- Students will be loaded here -->
+            </div>
+
+            <div id="ai_analysis_container" style="display:none;">
+                <!-- AI analysis will appear here -->
             </div>
         </div>
     </div>
@@ -143,7 +168,233 @@
         </div>
     </div>
 
-    <!-- Custom Confirm Dialog Overlay -->
+    <!-- Student Profile Modal (Multi-Step Form) -->
+    <div id="studentProfileModal" class="create-modal-overlay" style="display:none;" onclick="closeStudentModal()">
+        <div class="create-modal student-profile-modal" onclick="event.stopPropagation()" style="max-width:700px;">
+            <div class="modal-header"
+                style="justify-content: space-between; display: flex; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 id="studentModalTitle" style="margin:0; font-size: 20px; color: #333;">Add Student Profile</h2>
+                <button class="btn-close" onclick="closeStudentModal()"
+                    style="background:none; border:none; font-size:28px; color:#999; cursor:pointer;">×</button>
+            </div>
+
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Basic</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Attendance</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Academic</div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">Family</div>
+                </div>
+                <div class="step" data-step="5">
+                    <div class="step-number">5</div>
+                    <div class="step-label">Health & Safety</div>
+                </div>
+            </div>
+
+            <form id="studentProfileForm">
+                <input type="hidden" id="student_id_hidden" value="">
+                <input type="hidden" id="classroom_id_hidden" value="">
+
+                <!-- Step 1: Basic Information -->
+                <div class="form-step active" data-step="1">
+                    <h3>Basic Information</h3>
+                    <div class="form-group">
+                        <label>Student Name *</label>
+                        <input type="text" id="student_name" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Age *</label>
+                            <input type="number" id="student_age" min="5" max="20" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Grade/Class *</label>
+                            <input type="text" id="student_grade" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>School Location</label>
+                        <select id="school_location">
+                            <option value="Urban">Urban</option>
+                            <option value="Rural">Rural</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 2: Attendance Data -->
+                <div class="form-step" data-step="2">
+                    <h3>Attendance Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Total School Days</label>
+                            <input type="number" id="total_days" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Days Present</label>
+                            <input type="number" id="days_present" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Days Absent</label>
+                            <input type="number" id="days_absent" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Longest Continuous Absence (days)</label>
+                            <input type="number" id="longest_absence" min="0" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Academic Performance -->
+                <div class="form-step" data-step="3">
+                    <h3>Academic Performance</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Term Marks (%)</label>
+                            <input type="number" id="current_marks" min="0" max="100" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Previous Term Marks (%)</label>
+                            <input type="number" id="previous_marks" min="0" max="100" value="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Failed Subjects (Current)</label>
+                            <input type="number" id="failed_subjects" min="0" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Failed Subjects (Previous)</label>
+                            <input type="number" id="failed_subjects_previous" min="0" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Family & Economic -->
+                <div class="form-step" data-step="4">
+                    <h3>Family & Economic Background</h3>
+                    <div class="form-group">
+                        <label>Annual Family Income (₹)</label>
+                        <input type="number" id="family_income" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Parent Education Level</label>
+                        <select id="parent_education">
+                            <option value="None">None</option>
+                            <option value="Primary">Primary</option>
+                            <option value="Secondary">Secondary</option>
+                            <option value="Higher Secondary">Higher Secondary</option>
+                            <option value="Graduate">Graduate</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Parent Attitude Towards Education</label>
+                        <select id="parent_attitude">
+                            <option value="Supportive">Supportive</option>
+                            <option value="Neutral">Neutral</option>
+                            <option value="Unsupportive">Unsupportive</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><input type="checkbox" id="has_study_device"> Has Study Device</label>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox" id="student_works"> Student Works (affects schooling)</label>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Daily Household Work (hours)</label>
+                            <input type="number" id="household_work_hours" min="0" max="24" step="0.5" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox" id="family_migrates"> Family Migrates Seasonally</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><input type="checkbox" id="early_marriage_risk"> Early Marriage Risk</label>
+                    </div>
+                </div>
+
+                <!-- Step 5: Health & Safety -->
+                <div class="form-step" data-step="5">
+                    <h3>Health & Safety</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nutrition Status</label>
+                            <select id="nutrition_status">
+                                <option value="Normal">Normal</option>
+                                <option value="Undernourished">Undernourished</option>
+                                <option value="Severely Undernourished">Severely Undernourished</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Health-Related Absences</label>
+                            <input type="number" id="health_absences" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Menstrual Hygiene Access</label>
+                            <select id="menstrual_hygiene">
+                                <option value="Adequate">Adequate</option>
+                                <option value="Limited">Limited</option>
+                                <option value="None">None</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox" id="long_term_illness"> Long-term Illness</label>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Distance to School (km)</label>
+                            <input type="number" id="distance_to_school" min="0" step="0.1" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Travel Mode</label>
+                            <select id="travel_mode">
+                                <option value="Walk">Walk</option>
+                                <option value="Bicycle">Bicycle</option>
+                                <option value="Bus">Bus</option>
+                                <option value="Auto">Auto</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><input type="checkbox" id="route_safety_concerns"> Route Safety Concerns</label>
+                        </div>
+                        <div class="form-group">
+                            <label><input type="checkbox" id="girls_toilets_available" checked> Girls' Toilets
+                                Available</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="form-navigation">
+                    <button type="button" class="btn-prev" onclick="prevStep()" style="display:none;">←
+                        Previous</button>
+                    <button type="button" class="btn-next" onclick="nextStep()">Next →</button>
+                    <button type="submit" class="btn-save-student" style="display:none;">Save Student</button>
+                </div>
+            </form>
+        </div>
+    </div> <!-- Custom Confirm Dialog Overlay -->
     <div id="confirmOverlay" class="confirm-overlay" style="display: none;" onclick="closeConfirm()">
         <div class="confirm-box" onclick="event.stopPropagation()">
             <h3 id="confirmTitle">Confirm Action</h3>
@@ -217,13 +468,13 @@
 
             container.innerHTML = fields.map(f => `
                 <div class="field-container">
-                    <div class="field-header">
-                        <span class="field-label">${f.label}</span>
-                        <div id="btn_group_${f.key}">
-                            <button class="btn-edit-field" onclick="startEditField('${id}', '${f.key}')">Edit</button>
-                        </div>
+                    <div class="field-info">
+                        <div class="field-label" style="font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">${f.label}</div>
+                        <div class="field-value" id="val_${f.key}" style="font-size:17px; font-weight:600; color:var(--text-main);">${inst[f.key]}</div>
                     </div>
-                    <div class="field-value" id="val_${f.key}">${inst[f.key]}</div>
+                    <div id="btn_group_${f.key}">
+                        <button class="btn-edit-field" onclick="startEditField('${id}', '${f.key}')">Edit</button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -415,38 +666,365 @@
 
         function renderClassroomInfoTab(cls) {
             const container = document.getElementById('content_classInfo');
+            const fields = [
+                { label: "Grade", key: "grade" },
+                { label: "Section", key: "section" },
+                { label: "Total Students", key: "total_students" },
+                { label: "Class Teacher", key: "class_teacher" },
+                { label: "Academic Year", key: "academic_year" }
+            ];
+
             container.innerHTML = `
                 <div class="info-container">
-                    <div class="field-container">
-                        <div class="field-header">
-                            <div><strong>Grade</strong></div>
-                        </div>
-                        <div>${cls.grade}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px;">
+                        <h3 style="margin:0; font-size:20px; color:var(--text-main);">Classroom Information</h3>
+                        <button class="btn-edit-field" style="background:var(--primary); color:white; border:none;" onclick="openEditClassroomModal('${cls.classroom_id}')">Edit Classroom</button>
                     </div>
-                    <div class="field-container">
-                        <div class="field-header">
-                            <div><strong>Section</strong></div>
-                        </div>
-                        <div>${cls.section}</div>
+                    <div class="info-fields">
+                        ${fields.map(f => `
+                            <div class="field-container">
+                                <div class="field-info">
+                                    <div class="field-label" style="font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">${f.label}</div>
+                                    <div class="field-value" style="font-size:17px; font-weight:600; color:var(--text-main);">${cls[f.key] || 'N/A'}</div>
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
-                    <div class="field-container">
-                        <div class="field-header">
-                            <div><strong>Total Students</strong></div>
-                        </div>
-                        <div>${cls.total_students}</div>
+                </div>`;
+        }
+
+        // Student Data Functions
+        async function loadStudentData() {
+            if (!currentOpenedClassId) return;
+
+            const btn = document.getElementById('btn_load_students');
+            const listContainer = document.getElementById('student_list_container');
+            const analysisContainer = document.getElementById('ai_analysis_container');
+
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.textContent = 'Loading...';
+
+            try {
+                // Fetch students
+                const studentsRes = await fetch(`${API_BASE}/api/classrooms/${currentOpenedClassId}/students`, {
+                    headers: getAuthHeader()
+                });
+                const studentsData = await studentsRes.json();
+
+                if (!studentsData.success) {
+                    listContainer.innerHTML = '<div class="error">Failed to load students</div>';
+                    listContainer.style.display = 'block';
+                    return;
+                }
+
+                const students = studentsData.students;
+
+                if (students.length === 0) {
+                    listContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">No students in this classroom yet.</div>';
+                    listContainer.style.display = 'block';
+                    btn.style.display = 'none';
+
+                    // Show Add Student button even when no students exist
+                    document.getElementById('btn_add_student').style.display = 'inline-block';
+                    return;
+                }
+
+                // Render student cards
+                listContainer.innerHTML = '<h3 style="margin-bottom:16px;">Students</h3>' +
+                    students.map(s => renderStudentCard(s)).join('');
+                listContainer.style.display = 'block';
+
+                // Show Add Student button
+                document.getElementById('btn_add_student').style.display = 'inline-block';
+
+                // Trigger AI analysis
+                analysisContainer.style.display = 'block';
+                analysisContainer.innerHTML = '<div class="ai-loading">🤖 Analyzing with Qwen AI...</div>';
+
+                const analysisRes = await fetch(`${API_BASE}/api/classrooms/${currentOpenedClassId}/analyze-risk`, {
+                    method: 'POST',
+                    headers: getAuthHeader()
+                });
+                const analysisData = await analysisRes.json();
+
+                if (analysisData.success) {
+                    renderAIAnalysis(analysisData.analysis, analysisContainer);
+                } else {
+                    analysisContainer.innerHTML = '<div class="ai-error">AI analysis unavailable</div>';
+                }
+
+                // Hide button after loading
+                btn.style.display = 'none';
+
+            } catch (error) {
+                listContainer.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                listContainer.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Load Student Data & AI Analysis';
+            }
+        }
+
+        function renderStudentCard(student) {
+            const attendance = student.attendance_percent || 0;
+            const marks = student.current_marks || 0;
+            const isHighRisk = attendance < 70 || marks < 60;
+
+            return `
+                <div class="student-card collapsed" id="student_${student.student_id}">
+                    <div class="student-header" onclick="toggleStudentCard('${student.student_id}')">
+                        <div class="student-avatar ${isHighRisk ? 'high-risk' : ''}">${student.name ? student.name[0] : 'S'}</div>
+                        <div class="student-name">${student.name || 'Unknown'}</div>
+                        ${isHighRisk ? '<span class="risk-badge">⚠️ High Risk</span>' : ''}
+                        <div class="expand-icon">▼</div>
                     </div>
-                    <div class="field-container">
-                        <div class="field-header">
-                            <div><strong>Class Teacher</strong></div>
+                    <div class="student-details" style="display:none;">
+                        <div class="detail-row">
+                            <strong>Attendance:</strong> ${attendance.toFixed(1)}%
                         </div>
-                        <div>${cls.class_teacher}</div>
-                    </div>
-                    <div style="margin-top:20px; text-align:right;">
-                         <button class="btn-edit-cls" onclick="openEditClassroomModal('${cls.classroom_id}')">Edit Details</button>
+                        <div class="detail-row">
+                            <strong>Current Marks:</strong> ${marks}%
+                        </div>
+                        <div class="detail-row">
+                            <strong>Previous Marks:</strong> ${student.previous_marks || 0}%
+                        </div>
+                        <div class="detail-row">
+                            <strong>Failed Subjects:</strong> ${student.failed_subjects || 0}
+                        </div>
+                        <div class="detail-row">
+                            <strong>Total Absences:</strong> ${student.days_absent || 0} days
+                        </div>
+                        <div class="student-actions" style="margin-top:12px; display:flex; gap:8px;">
+                            <button class="btn-edit-student" onclick="event.stopPropagation(); openEditStudentModal('${student.student_id}')">✏️ Edit</button>
+                            <button class="btn-delete-student" onclick="event.stopPropagation(); deleteStudentProfile('${student.student_id}')">🗑️ Delete</button>
+                        </div>
                     </div>
                 </div>
             `;
         }
+
+        function toggleStudentCard(studentId) {
+            const card = document.getElementById(`student_${studentId}`);
+            const details = card.querySelector('.student-details');
+            const icon = card.querySelector('.expand-icon');
+
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                icon.textContent = '▲';
+                card.classList.remove('collapsed');
+            } else {
+                details.style.display = 'none';
+                icon.textContent = '▼';
+                card.classList.add('collapsed');
+            }
+        }
+
+        function renderAIAnalysis(analysis, container) {
+            const highRisk = analysis.highRiskStudents || [];
+
+            if (highRisk.length === 0) {
+                container.innerHTML = '<div class="ai-result success">✅ No high-risk students identified by AI</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="ai-result warning">
+                    <h4>⚠️ ${highRisk.length} High-Risk Students Identified by Qwen AI</h4>
+                    <ul>
+                        ${highRisk.map(s => `<li><strong>Student ID ${s.id}:</strong> ${s.reason}</li>`).join('')}
+                    </ul>
+                    <div style="margin-top:12px; font-size:12px; color:#666;">
+                        💡 Powered by Qwen 2.5 (1.5B) running locally
+                    </div>
+                </div>
+            `;
+        }
+
+        // ========== STUDENT PROFILE MANAGEMENT ==========
+
+        let currentStep = 1;
+        const totalSteps = 5;
+
+        function openAddStudentModal() {
+            if (!currentOpenedClassId) return;
+
+            document.getElementById('studentModalTitle').textContent = 'Add Student Profile';
+            document.getElementById('student_id_hidden').value = '';
+            document.getElementById('classroom_id_hidden').value = currentOpenedClassId;
+            document.getElementById('studentProfileForm').reset();
+            currentStep = 1;
+            showStep(1);
+            document.getElementById('studentProfileModal').style.display = 'flex';
+        }
+
+        function openEditStudentModal(studentId) {
+            fetch(`${API_BASE}/api/classrooms/${currentOpenedClassId}/students`, {
+                headers: getAuthHeader()
+            })
+                .then(res => res.json())
+                .then(data => {
+                    const student = data.students.find(s => s.student_id === studentId);
+                    if (!student) return;
+
+                    document.getElementById('studentModalTitle').textContent = 'Edit Student Profile';
+                    document.getElementById('student_id_hidden').value = studentId;
+                    document.getElementById('classroom_id_hidden').value = currentOpenedClassId;
+
+                    document.getElementById('student_name').value = student.name || '';
+                    document.getElementById('student_age').value = student.age || 0;
+                    document.getElementById('student_grade').value = student.grade || '';
+                    document.getElementById('school_location').value = student.school_location || 'Urban';
+
+                    document.getElementById('total_days').value = student.total_days || 0;
+                    document.getElementById('days_present').value = student.days_present || 0;
+                    document.getElementById('days_absent').value = student.days_absent || 0;
+                    document.getElementById('longest_absence').value = student.longest_absence || 0;
+
+                    document.getElementById('current_marks').value = student.current_marks || 0;
+                    document.getElementById('previous_marks').value = student.previous_marks || 0;
+                    document.getElementById('failed_subjects').value = student.failed_subjects || 0;
+                    document.getElementById('failed_subjects_previous').value = student.failed_subjects_previous || 0;
+
+                    document.getElementById('family_income').value = student.family_income || 0;
+                    document.getElementById('parent_education').value = student.parent_education || 'None';
+                    document.getElementById('parent_attitude').value = student.parent_attitude || 'Supportive';
+                    document.getElementById('has_study_device').checked = student.has_study_device || false;
+                    document.getElementById('student_works').checked = student.student_works || false;
+                    document.getElementById('household_work_hours').value = student.household_work_hours || 0;
+                    document.getElementById('family_migrates').checked = student.family_migrates || false;
+                    document.getElementById('early_marriage_risk').checked = student.early_marriage_risk || false;
+
+                    document.getElementById('nutrition_status').value = student.nutrition_status || 'Normal';
+                    document.getElementById('health_absences').value = student.health_absences || 0;
+                    document.getElementById('menstrual_hygiene').value = student.menstrual_hygiene || 'Adequate';
+                    document.getElementById('long_term_illness').checked = student.long_term_illness || false;
+                    document.getElementById('distance_to_school').value = student.distance_to_school || 0;
+                    document.getElementById('travel_mode').value = student.travel_mode || 'Walk';
+                    document.getElementById('route_safety_concerns').checked = student.route_safety_concerns || false;
+                    document.getElementById('girls_toilets_available').checked = student.girls_toilets_available !== false;
+
+                    currentStep = 1;
+                    showStep(1);
+                    document.getElementById('studentProfileModal').style.display = 'flex';
+                });
+        }
+
+        function closeStudentModal() {
+            document.getElementById('studentProfileModal').style.display = 'none';
+            document.getElementById('studentProfileForm').reset();
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        }
+
+        function showStep(step) {
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+
+            document.querySelector(`.form-step[data-step="${step}"]`).classList.add('active');
+            document.querySelector(`.step[data-step="${step}"]`).classList.add('active');
+
+            document.querySelector('.btn-prev').style.display = step === 1 ? 'none' : 'inline-block';
+            document.querySelector('.btn-next').style.display = step === totalSteps ? 'none' : 'inline-block';
+            document.querySelector('.btn-save-student').style.display = step === totalSteps ? 'inline-block' : 'none';
+        }
+
+        function deleteStudentProfile(studentId) {
+            if (!confirm('Are you sure you want to delete this student profile?')) return;
+
+            fetch(`${API_BASE}/api/students/${studentId}`, {
+                method: 'DELETE',
+                headers: getAuthHeader()
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Student deleted successfully');
+                        loadStudentData();
+                    } else {
+                        alert('Error deleting student');
+                    }
+                });
+        }
+
+        // Form submission handler
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('studentProfileForm');
+            if (form) {
+                form.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+
+                    const studentId = document.getElementById('student_id_hidden').value;
+                    const isEdit = !!studentId;
+
+                    const studentData = {
+                        classroom_id: document.getElementById('classroom_id_hidden').value,
+                        name: document.getElementById('student_name').value,
+                        age: parseInt(document.getElementById('student_age').value),
+                        grade: document.getElementById('student_grade').value,
+                        school_location: document.getElementById('school_location').value,
+                        total_days: parseInt(document.getElementById('total_days').value),
+                        days_present: parseInt(document.getElementById('days_present').value),
+                        days_absent: parseInt(document.getElementById('days_absent').value),
+                        longest_absence: parseInt(document.getElementById('longest_absence').value),
+                        current_marks: parseFloat(document.getElementById('current_marks').value),
+                        previous_marks: parseFloat(document.getElementById('previous_marks').value),
+                        failed_subjects: parseInt(document.getElementById('failed_subjects').value),
+                        failed_subjects_previous: parseInt(document.getElementById('failed_subjects_previous').value),
+                        family_income: parseFloat(document.getElementById('family_income').value),
+                        parent_education: document.getElementById('parent_education').value,
+                        parent_attitude: document.getElementById('parent_attitude').value,
+                        has_study_device: document.getElementById('has_study_device').checked,
+                        student_works: document.getElementById('student_works').checked,
+                        household_work_hours: parseFloat(document.getElementById('household_work_hours').value),
+                        family_migrates: document.getElementById('family_migrates').checked,
+                        early_marriage_risk: document.getElementById('early_marriage_risk').checked,
+                        nutrition_status: document.getElementById('nutrition_status').value,
+                        health_absences: parseInt(document.getElementById('health_absences').value),
+                        menstrual_hygiene: document.getElementById('menstrual_hygiene').value,
+                        long_term_illness: document.getElementById('long_term_illness').checked,
+                        distance_to_school: parseFloat(document.getElementById('distance_to_school').value),
+                        travel_mode: document.getElementById('travel_mode').value,
+                        route_safety_concerns: document.getElementById('route_safety_concerns').checked,
+                        girls_toilets_available: document.getElementById('girls_toilets_available').checked
+                    };
+
+                    try {
+                        const url = isEdit ? `${API_BASE}/api/students/${studentId}` : `${API_BASE}/api/students`;
+                        const method = isEdit ? 'PATCH' : 'POST';
+
+                        const response = await fetch(url, {
+                            method: method,
+                            headers: getAuthHeader(),
+                            body: JSON.stringify(studentData)
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            alert(isEdit ? 'Student updated successfully!' : 'Student created successfully!');
+                            closeStudentModal();
+                            loadStudentData();
+                        } else {
+                            alert('Error: ' + (result.detail || 'Failed to save student'));
+                        }
+                    } catch (error) {
+                        alert('Error: ' + error.message);
+                    }
+                });
+            }
+        });
 
         function openCreateClassroomModal(instId) {
             document.getElementById('createModalTitle').innerText = "Create Classroom";

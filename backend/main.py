@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from fastapi.security import OAuth2PasswordBearer
 from auth import hash_password, verify_password, create_access_token, check_rate_limit, record_failed_attempt, reset_attempts, decode_access_token
 from database import users_collection, students_collection, interventions_collection, institutions_collection, classrooms_collection
+from ai_service import ai_service
 
 load_dotenv()
 # Database is now initialized and imported from database.py
@@ -399,6 +400,165 @@ def delete_classroom(class_id: str, current_user: dict = Depends(get_current_use
         return {"success": True, "message": "Classroom deleted"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.post("/api/classrooms/{classroom_id}/analyze-risk")
+def analyze_classroom_risk(classroom_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Analyze all students in a classroom for dropout risk using Qwen AI.
+    Falls back to rules-based analysis if AI is unavailable.
+    """
+    try:
+        # Get students from database
+        students = list(students_collection.find({"classroom_id": classroom_id}, {"_id": 0}))
+        
+        if not students:
+            return {"success": False, "error": "No students found in this classroom"}
+        
+        # Run AI analysis
+        analysis = ai_service.analyze_student_risk(students)
+        
+        return {
+            "success": True,
+            "analysis": analysis,
+            "total_students": len(students),
+            "high_risk_count": len(analysis.get('highRiskStudents', []))
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}")
+
+@app.get("/api/classrooms/{classroom_id}/students")
+def get_classroom_students(classroom_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Get all students in a specific classroom.
+    """
+    try:
+        students = list(students_collection.find({"classroom_id": classroom_id}, {"_id": 0}))
+        return {"success": True, "students": students}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.post("/api/students")
+def create_student(data: dict = Body(...), current_user: dict = Depends(get_current_user)):
+    """
+    Create a new student with comprehensive data fields.
+    """
+    try:
+        # Generate student ID
+        import uuid
+        student_id = str(uuid.uuid4())[:8]
+        
+        # Prepare student data
+        student_data = {
+            "student_id": student_id,
+            "classroom_id": data.get("classroom_id"),
+            "name": data.get("name"),
+            "age": int(data.get("age", 0)),
+            "grade": data.get("grade", ""),
+            "school_location": data.get("school_location", "Urban"),
+            
+            # Attendance
+            "total_days": int(data.get("total_days", 0)),
+            "days_present": int(data.get("days_present", 0)),
+            "days_absent": int(data.get("days_absent", 0)),
+            "longest_absence": int(data.get("longest_absence", 0)),
+            
+            # Academic
+            "current_marks": float(data.get("current_marks", 0)),
+            "previous_marks": float(data.get("previous_marks", 0)),
+            "failed_subjects": int(data.get("failed_subjects", 0)),
+            "failed_subjects_previous": int(data.get("failed_subjects_previous", 0)),
+            
+            # Family & Economic
+            "family_income": float(data.get("family_income", 0)),
+            "parent_education": data.get("parent_education", "None"),
+            "has_study_device": bool(data.get("has_study_device", False)),
+            "student_works": bool(data.get("student_works", False)),
+            
+            # Health
+            "nutrition_status": data.get("nutrition_status", "Normal"),
+            "health_absences": int(data.get("health_absences", 0)),
+            "menstrual_hygiene": data.get("menstrual_hygiene", "Adequate"),
+            "long_term_illness": bool(data.get("long_term_illness", False)),
+            
+            # Social
+            "parent_attitude": data.get("parent_attitude", "Supportive"),
+            "early_marriage_risk": bool(data.get("early_marriage_risk", False)),
+            "household_work_hours": float(data.get("household_work_hours", 0)),
+            "family_migrates": bool(data.get("family_migrates", False)),
+            
+            # Safety & Access
+            "distance_to_school": float(data.get("distance_to_school", 0)),
+            "travel_mode": data.get("travel_mode", "Walk"),
+            "route_safety_concerns": bool(data.get("route_safety_concerns", False)),
+            "girls_toilets_available": bool(data.get("girls_toilets_available", True)),
+            
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        # Calculate attendance percentage
+        total_days = student_data["total_days"]
+        days_present = student_data["days_present"]
+        if total_days > 0:
+            student_data["attendance_percent"] = round((days_present / total_days) * 100, 1)
+        else:
+            student_data["attendance_percent"] = 0.0
+        
+        # Insert into database
+        students_collection.insert_one(student_data)
+        
+        return {"success": True, "message": "Student created successfully", "student_id": student_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error creating student: {str(e)}")
+
+@app.patch("/api/students/{student_id}")
+def update_student(student_id: str, data: dict = Body(...), current_user: dict = Depends(get_current_user)):
+    """
+    Update an existing student's data.
+    """
+    try:
+        # Recalculate attendance if relevant fields changed
+        if "total_days" in data or "days_present" in data:
+            student = students_collection.find_one({"student_id": student_id})
+            if student:
+                total = int(data.get("total_days", student.get("total_days", 0)))
+                present = int(data.get("days_present", student.get("days_present", 0)))
+                if total > 0:
+                    data["attendance_percent"] = round((present / total) * 100, 1)
+        
+        data["updated_at"] = datetime.utcnow().isoformat()
+        
+        result = students_collection.update_one(
+            {"student_id": student_id},
+            {"$set": data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Student not found")
+        
+        return {"success": True, "message": "Student updated successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating student: {str(e)}")
+
+@app.delete("/api/students/{student_id}")
+def delete_student(student_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Delete a student.
+    """
+    try:
+        result = students_collection.delete_one({"student_id": student_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Student not found")
+        
+        return {"success": True, "message": "Student deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting student: {str(e)}")
+
+
 
 # @app.get("/intervention/{student_name}")
 # def get_intervention_by_student(student_name: str):
